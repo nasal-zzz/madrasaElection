@@ -30,22 +30,28 @@
         <div id="rolesList" class="roles-list"></div>
         <hr />
         <div class="instructions">To include the madrasa logo, place a file named <code>assets/logo.png</code> in the project folder. You can add candidate photos when creating candidates; images are stored locally in the device.</div>
+        <hr />
+        <div class="admin-password">
+          <h3>Admin Password</h3>
+          <div class="form-row">
+            <input id="adminPassInput" placeholder="Set or enter admin password" type="password" />
+            <button id="setAdminPass" class="btn">Set/Change</button>
+            <button id="clearAdminPass" class="btn danger">Remove</button>
+          </div>
+        </div>
       </section>
 
       <section id="votingArea" class="card hidden">
         <h2 id="votingRoleTitle">Voting</h2>
         <div id="candidatesGrid" class="candidates-grid"></div>
-        <div class="voting-footer">
-          <button id="prevRole" class="btn">Previous Role</button>
-          <button id="nextRole" class="btn primary">Next Role</button>
-        </div>
+        <div class="voting-footer"></div>
       </section>
 
       <section id="resultsArea" class="card hidden">
         <h2>Results</h2>
         <div id="resultsList"></div>
         <div class="results-actions">
-          <button id="exportJson" class="btn">Export JSON</button>
+          <button id="exportCsv" class="btn">Export to Excel (CSV)</button>
           <button id="resetElection" class="btn danger">Reset All</button>
         </div>
       </section>
@@ -73,8 +79,7 @@
     <div class="candidate-card">
       <img class="candidate-photo" src="" />
       <div class="candidate-info">
-        <div class="candidate-name"></div>
-        <div class="candidate-votes"></div>
+      <div class="candidate-name"></div>
       </div>
       <button class="vote-btn btn primary">Vote</button>
     </div>

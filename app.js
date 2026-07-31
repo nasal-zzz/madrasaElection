@@ -7,6 +7,20 @@
 */
 
 const STORAGE_KEY = 'madrasa_election_v1';
+const ADMIN_PASS_KEY = 'madrasa_election_admin_pass';
+
+// Audio helpers (WebAudio) - small tones used for start, click and finish
+let audioCtx = null;
+function ensureAudio(){ if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
+function playTone(freq=880, duration=0.12, type='sine', vol=0.2){ try{ ensureAudio(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(vol, audioCtx.currentTime); o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{ try{ o.stop(); }catch(e){} }, duration*1000); }catch(e){ console.warn('Audio failed',e); } }
+function playStart(){ playTone(880,0.14,'sine',0.18); setTimeout(()=>playTone(1320,0.08,'sine',0.12),60); }
+function playClick(){ playTone(1200,0.06,'square',0.14); }
+function playFinish(){ playTone(660,0.18,'sine',0.18); setTimeout(()=>playTone(880,0.12,'sine',0.16),120); }
+
+// Admin password helpers
+function getAdminPass(){ return localStorage.getItem(ADMIN_PASS_KEY) || null; }
+function setAdminPassValue(p){ if(!p){ localStorage.removeItem(ADMIN_PASS_KEY); alert('Admin password removed'); } else { localStorage.setItem(ADMIN_PASS_KEY,p); alert('Admin password set'); } }
+function verifyAdminPrompt(){ const pass = getAdminPass(); if(!pass){ alert('No admin password set. Open Admin panel to set one.'); return false; } const attempt = prompt('Enter admin password:'); if(attempt === pass){ return true; } alert('Incorrect password'); return false; }
 
 // Elements
 const adminToggle = document.getElementById('adminToggle');
@@ -18,12 +32,14 @@ const startElectionBtn = document.getElementById('startElection');
 const votingArea = document.getElementById('votingArea');
 const votingRoleTitle = document.getElementById('votingRoleTitle');
 const candidatesGrid = document.getElementById('candidatesGrid');
-const prevRoleBtn = document.getElementById('prevRole');
-const nextRoleBtn = document.getElementById('nextRole');
+// admin password elements
+const adminPassInput = document.getElementById('adminPassInput');
+const setAdminPassBtn = document.getElementById('setAdminPass');
+const clearAdminPassBtn = document.getElementById('clearAdminPass');
 const viewResultsBtn = document.getElementById('viewResults');
 const resultsArea = document.getElementById('resultsArea');
 const resultsList = document.getElementById('resultsList');
-const exportJsonBtn = document.getElementById('exportJson');
+const exportCsvBtn = document.getElementById('exportCsv');
 const resetElectionBtn = document.getElementById('resetElection');
 
 const roleTemplate = document.getElementById('roleTemplate');
@@ -135,7 +151,6 @@ function renderVotingRole(){
     const tpl = candidateCardTemplate.content.cloneNode(true);
     tpl.querySelector('.candidate-photo').src = c.photoDataUrl || 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'><rect width=\'100%\' height=\'100%\' fill=\'%230b7fa3\' /><text x=\'50%\' y=\'50%\' fill=\'white\' font-size=\'18\' text-anchor=\'middle\' dominant-baseline=\'central\'>No Image</text></svg>';
     tpl.querySelector('.candidate-name').textContent = c.name;
-    tpl.querySelector('.candidate-votes').textContent = `Votes: ${c.votes || 0}`;
     const voteBtn = tpl.querySelector('.vote-btn');
     voteBtn.addEventListener('click', ()=>{ castVote(role.id, c.id); });
     candidatesGrid.appendChild(tpl);
@@ -147,14 +162,24 @@ function castVote(roleId, candId){
   const cand = role.candidates.find(c=>c.id===candId); if(!cand) return;
   cand.votes = (cand.votes || 0) + 1;
   saveState();
-  // after vote, show a brief animation and move to next role automatically
+  // play click sound and show brief animation
+  playClick();
   showVoteAnimation(cand.name);
-  // refresh candidate counts
-  renderVotingRole();
-  // auto-advance after short delay
-  setTimeout(()=>{
-    if(state.currentRoleIndex < state.roles.length - 1){ state.currentRoleIndex++; renderVotingRole(); } else { alert('All roles done. You can view results.'); }
-  }, 900);
+  // auto-advance after a short delay; do not show vote counts to voters
+  if(state.currentRoleIndex < state.roles.length - 1){
+    setTimeout(()=>{ state.currentRoleIndex++; renderVotingRole(); }, 700);
+  } else {
+    // finished all roles
+    setTimeout(()=>{
+      votingArea.classList.add('hidden');
+      playFinish();
+      // show a small congratulatory overlay
+      const el = document.createElement('div');
+      el.innerHTML = `<div style="padding:20px 28px;border-radius:12px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;font-weight:700;box-shadow:0 12px 40px rgba(11,127,163,0.18);">Congratulations — Thank you for voting!</div>`;
+      el.style.position='fixed'; el.style.left='50%'; el.style.top='35%'; el.style.transform='translateX(-50%)'; el.style.zIndex=9999; document.body.appendChild(el);
+      setTimeout(()=>el.remove(),2200);
+    },700);
+  }
 }
 
 function showVoteAnimation(name){
@@ -186,16 +211,36 @@ function renderResults(){
 }
 
 // UI wiring
-adminToggle.addEventListener('click', ()=>{ adminPanel.classList.toggle('hidden'); });
 addRoleBtn.addEventListener('click', ()=>{ const name = roleNameInput.value.trim(); if(!name){ alert('Role name required'); return; } addRole(name); roleNameInput.value=''; });
-startElectionBtn.addEventListener('click', ()=>{ if(state.roles.length===0){ alert('Add roles first in Admin panel'); return; } state.mode='voting'; votingArea.classList.remove('hidden'); adminPanel.classList.add('hidden'); resultsArea.classList.add('hidden'); renderVotingRole(); saveState(); });
-prevRoleBtn.addEventListener('click', ()=>{ if(state.currentRoleIndex>0){ state.currentRoleIndex--; renderVotingRole(); } });
-nextRoleBtn.addEventListener('click', ()=>{ if(state.currentRoleIndex < state.roles.length -1){ state.currentRoleIndex++; renderVotingRole(); } else { alert('End of roles'); } });
-viewResultsBtn.addEventListener('click', ()=>{ state.mode='results'; votingArea.classList.add('hidden'); adminPanel.classList.add('hidden'); resultsArea.classList.remove('hidden'); renderResults(); });
-exportJsonBtn.addEventListener('click', ()=>{ const data = JSON.stringify(state,null,2); const blob = new Blob([data],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'madrasa-election-results.json'; a.click(); URL.revokeObjectURL(url); });
+startElectionBtn.addEventListener('click', ()=>{ if(state.roles.length===0){ alert('Add roles first in Admin panel'); return; } // start from first role
+  state.currentRoleIndex = 0; state.mode='voting'; votingArea.classList.remove('hidden'); adminPanel.classList.add('hidden'); resultsArea.classList.add('hidden'); playStart(); renderVotingRole(); saveState(); });
+viewResultsBtn.addEventListener('click', ()=>{ if(!verifyAdminPrompt()){ return; } state.mode='results'; votingArea.classList.add('hidden'); adminPanel.classList.add('hidden'); resultsArea.classList.remove('hidden'); renderResults(); });
+exportCsvBtn.addEventListener('click', ()=>{ if(!verifyAdminPrompt()) return; const rows = [['Role','Candidate','Votes']]; state.roles.forEach(r=>{ r.candidates.forEach(c=>{ rows.push([r.name, c.name, c.votes || 0]); }); }); const csv = rows.map(r=> r.map(cell=> `"${(''+cell).replace(/"/g,'""')}"`).join(',')).join('\r\n'); const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'madrasa-election-results.csv'; a.click(); URL.revokeObjectURL(url); });
 resetElectionBtn.addEventListener('click', ()=>{ if(confirm('Reset EVERYTHING (roles, candidates, votes)?')){ localStorage.removeItem(STORAGE_KEY); state = { madrasaName: state.madrasaName, roles: [], currentRoleIndex:0, mode:'idle' }; renderRolesList(); votingArea.classList.add('hidden'); resultsArea.classList.add('hidden'); saveState(); } });
 
-// initialization
+// initialization of admin password controls and admin toggle behavior
+setAdminPassBtn && setAdminPassBtn.addEventListener('click', ()=>{
+  const v = adminPassInput.value;
+  if(!v){ if(confirm('Remove admin password? This will allow anyone to open Admin and Results.')){ setAdminPassValue(''); adminPassInput.value=''; } return; }
+  setAdminPassValue(v); adminPassInput.value='';
+});
+clearAdminPassBtn && clearAdminPassBtn.addEventListener('click', ()=>{
+  if(confirm('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; }
+});
+
+// Admin toggle: require password if set
+adminToggle.addEventListener('click', ()=>{
+  const pass = getAdminPass();
+  if(pass){
+    const attempt = prompt('Enter admin password:');
+    if(attempt === pass){ adminPanel.classList.toggle('hidden'); } else { alert('Incorrect password'); }
+  } else {
+    adminPanel.classList.toggle('hidden');
+    alert('Note: No admin password set. Use the Admin Password box to set one to protect Admin and Results.');
+  }
+});
+
+// Now load and render
 loadState(); renderRolesList();
 // If roles exist, keep admin hidden but show count
 if(state.roles.length>0){ /* nothing */ }
