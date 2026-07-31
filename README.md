@@ -3,7 +3,9 @@ MISBAHUL HUDHA MADRASA KAMBALAKKALLU — Election web app (device-based)
 Overview
 - Single-page static app (HTML/CSS/JS). Designed for voting performed on a single device (phone) as requested.
 - Admin panel to add roles and candidates (with photos). Candidate photos are stored locally in the device (encoded as data URLs in localStorage).
-- Voting shows one role at a time; after a vote the interface advances to the next role. Results are stored in localStorage and can be exported as JSON.
+- Voting shows one role at a time; after a vote the interface advances to the next role automatically.
+- Results are stored in localStorage and can be exported as Excel (.xlsx) using SheetJS.
+- Teacher PIN can be set to protect the Start Voting button, and admin password can be used to protect Admin and Results.
 
 How to use locally
 1. Open the folder `madrasa-election` in a web browser (open index.html).

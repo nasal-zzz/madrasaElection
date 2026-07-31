@@ -15,7 +15,7 @@
       </div>
       <div class="controls">
         <button id="adminToggle" class="btn">Admin Panel</button>
-        <button id="startElection" class="btn primary">Start Voting</button>
+        <button id="startElection" class="btn primary large">Start Voting</button>
         <button id="viewResults" class="btn">View Results</button>
       </div>
     </header>
@@ -31,27 +31,39 @@
         <hr />
         <div class="instructions">To include the madrasa logo, place a file named <code>assets/logo.png</code> in the project folder. You can add candidate photos when creating candidates; images are stored locally in the device.</div>
         <hr />
-        <div class="admin-password">
-          <h3>Admin Password</h3>
-          <div class="form-row">
-            <input id="adminPassInput" placeholder="Set or enter admin password" type="password" />
-            <button id="setAdminPass" class="btn">Set/Change</button>
-            <button id="clearAdminPass" class="btn danger">Remove</button>
+        <div class="admin-settings">
+          <div class="admin-password">
+            <h3>Admin Password</h3>
+            <div class="form-row">
+              <input id="adminPassInput" placeholder="New admin password" type="password" />
+              <input id="adminPassConfirmInput" placeholder="Confirm password" type="password" />
+              <button id="setAdminPass" class="btn">Set/Change</button>
+              <button id="clearAdminPass" class="btn danger">Remove</button>
+            </div>
+          </div>
+          <div class="admin-password">
+            <h3>Teacher PIN</h3>
+            <div class="form-row">
+              <input id="teacherPinInput" placeholder="New teacher PIN" type="password" inputmode="numeric" />
+              <input id="teacherPinConfirmInput" placeholder="Confirm PIN" type="password" inputmode="numeric" />
+              <button id="setTeacherPin" class="btn">Set/Change</button>
+              <button id="clearTeacherPin" class="btn danger">Remove</button>
+            </div>
           </div>
         </div>
       </section>
 
       <section id="votingArea" class="card hidden">
         <h2 id="votingRoleTitle">Voting</h2>
+        <p id="votingHint" class="vote-hint">Tap a candidate to cast your vote. The app will move to the next role automatically.</p>
         <div id="candidatesGrid" class="candidates-grid"></div>
-        <div class="voting-footer"></div>
       </section>
 
       <section id="resultsArea" class="card hidden">
         <h2>Results</h2>
         <div id="resultsList"></div>
         <div class="results-actions">
-          <button id="exportCsv" class="btn">Export to Excel (CSV)</button>
+          <button id="exportXlsx" class="btn">Export to Excel (.xlsx)</button>
           <button id="resetElection" class="btn danger">Reset All</button>
         </div>
       </section>
@@ -75,16 +87,7 @@
     </div>
   </template>
 
-  <template id="candidateCardTemplate">
-    <div class="candidate-card">
-      <img class="candidate-photo" src="" />
-      <div class="candidate-info">
-      <div class="candidate-name"></div>
-      </div>
-      <button class="vote-btn btn primary">Vote</button>
-    </div>
-  </template>
-
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.1/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
