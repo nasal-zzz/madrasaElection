@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MISBAHUL HUDHA MADRASA KAMBALAKKALLU - Election</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="branding">
+        <img id="logo" src="assets/logo.png" alt="Logo" onerror="this.style.display='none'" />
+        <h1>MISBAHUL HUDHA MADRASA KAMBALAKKALLU</h1>
+      </div>
+      <div class="controls">
+        <button id="adminToggle" class="btn">Admin Panel</button>
+        <button id="startElection" class="btn primary">Start Voting</button>
+        <button id="viewResults" class="btn">View Results</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="adminPanel" class="card hidden">
+        <h2>Admin — Setup Roles & Candidates</h2>
+        <div class="form-row">
+          <input id="roleName" placeholder="Role name (e.g., President)" />
+          <button id="addRole" class="btn">Add Role</button>
+        </div>
+        <div id="rolesList" class="roles-list"></div>
+        <hr />
+        <div class="instructions">To include the madrasa logo, place a file named <code>assets/logo.png</code> in the project folder. You can add candidate photos when creating candidates; images are stored locally in the device.</div>
+      </section>
+
+      <section id="votingArea" class="card hidden">
+        <h2 id="votingRoleTitle">Voting</h2>
+        <div id="candidatesGrid" class="candidates-grid"></div>
+        <div class="voting-footer">
+          <button id="prevRole" class="btn">Previous Role</button>
+          <button id="nextRole" class="btn primary">Next Role</button>
+        </div>
+      </section>
+
+      <section id="resultsArea" class="card hidden">
+        <h2>Results</h2>
+        <div id="resultsList"></div>
+        <div class="results-actions">
+          <button id="exportJson" class="btn">Export JSON</button>
+          <button id="resetElection" class="btn danger">Reset All</button>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <small>Made for MISBAHUL HUDHA MADRASA KAMBALAKKALLU — Voting app (anonymous, device-based)</small>
+    </footer>
+  </div>
+
+  <template id="roleTemplate">
+    <div class="role-item card">
+      <h3 class="role-title"></h3>
+      <div class="candidates-for-role"></div>
+      <div class="form-row">
+        <input class="candidateName" placeholder="Candidate name" />
+        <input type="file" accept="image/*" class="candidatePhoto" />
+        <button class="addCandidate btn">Add Candidate</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="candidateCardTemplate">
+    <div class="candidate-card">
+      <img class="candidate-photo" src="" />
+      <div class="candidate-info">
+        <div class="candidate-name"></div>
+        <div class="candidate-votes"></div>
+      </div>
+      <button class="vote-btn btn primary">Vote</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
