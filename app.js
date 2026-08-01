@@ -483,6 +483,8 @@ function showCompletionOverlay(){
       <h2>Thank you for voting</h2>
       <p>${state.madrasaName}</p>
       <p>Your vote has been recorded successfully. This confirmation can be printed for the voter record.</p>
+      <p>നിങ്ങൾ വോട്ടിംഗ് വിജയകരമായി പൂർത്തിയാക്കി, വിരലിൽ മാച്ച് ചെയ്യാൻ മറക്കരുത്.</p>
+      <p>شكرًا جزاك الله خيرًا</p>
       <div class="qr-grid">${createQrPattern()}</div>
       <div class="print-actions">
         <button class="btn primary" id="printConfirmationBtn">Print Confirmation</button>
