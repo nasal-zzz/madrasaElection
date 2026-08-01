@@ -49,6 +49,13 @@ input[type=text], input[type=password], input{padding:10px;border-radius:10px;bo
 .toast.hide{animation:toastOut .24s ease forwards}
 @keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(16px)}}
+.dialog-overlay{position:fixed;inset:0;background:rgba(3,20,30,0.68);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10001;backdrop-filter:blur(4px)}
+.dialog-overlay.hidden{display:none}
+.dialog-card{background:#fff;border-radius:18px;padding:24px;max-width:420px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.22);animation:dialogPop .22s ease both}
+.dialog-card h3{margin-top:0;color:#0b7fa3}
+.dialog-card input{width:100%;padding:12px;border:1px solid #d0e6f1;border-radius:12px;margin:14px 0 18px;outline:none}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px}
+@keyframes dialogPop{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes cardEntry{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulseGlow{0%{box-shadow:0 8px 24px rgba(11,127,163,0.08)}50%{box-shadow:0 12px 32px rgba(11,127,163,0.18)}100%{box-shadow:0 8px 24px rgba(11,127,163,0.08)}}
 .voting-area-active .candidate-card{animation:cardEntry .35s ease both, votePulse 2.8s ease infinite alternate;}

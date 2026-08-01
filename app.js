@@ -42,6 +42,63 @@ function showToast(message, type='info', duration=2800){
   setTimeout(()=>{ toast.classList.add('hide'); setTimeout(()=>toast.remove(), 260); }, duration);
 }
 
+function showDialog(content){
+  dialogOverlay.innerHTML = '';
+  dialogOverlay.classList.remove('hidden');
+  dialogOverlay.innerHTML = `
+    <div class="dialog-card">
+      ${content}
+    </div>
+  `;
+  return dialogOverlay.querySelector('.dialog-card');
+}
+
+function hideDialog(){
+  dialogOverlay.classList.add('hidden');
+  dialogOverlay.innerHTML = '';
+}
+
+function showConfirmDialog(message){
+  return new Promise((resolve)=>{
+    const card = showDialog(`
+      <h3>${message}</h3>
+      <div class="dialog-actions">
+        <button class="btn" id="dialogCancelBtn">Cancel</button>
+        <button class="btn primary" id="dialogConfirmBtn">Confirm</button>
+      </div>
+    `);
+    const cancelBtn = card.querySelector('#dialogCancelBtn');
+    const confirmBtn = card.querySelector('#dialogConfirmBtn');
+    cancelBtn.addEventListener('click', ()=>{ hideDialog(); resolve(false); });
+    confirmBtn.addEventListener('click', ()=>{ hideDialog(); resolve(true); });
+  });
+}
+
+function showPromptDialog(message, type='text', placeholder=''){
+  return new Promise((resolve)=>{
+    const card = showDialog(`
+      <h3>${message}</h3>
+      <input id="dialogInput" type="${type}" placeholder="${placeholder}" autocomplete="off" />
+      <div class="dialog-actions">
+        <button class="btn" id="dialogCancelBtn">Cancel</button>
+        <button class="btn primary" id="dialogSubmitBtn">Submit</button>
+      </div>
+    `);
+    const input = card.querySelector('#dialogInput');
+    const cancelBtn = card.querySelector('#dialogCancelBtn');
+    const submitBtn = card.querySelector('#dialogSubmitBtn');
+    input.focus();
+    cancelBtn.addEventListener('click', ()=>{ hideDialog(); resolve(null); });
+    submitBtn.addEventListener('click', ()=>{ hideDialog(); resolve(input.value.trim()); });
+    input.addEventListener('keydown', (event)=>{
+      if(event.key === 'Enter'){
+        event.preventDefault();
+        submitBtn.click();
+      }
+    });
+  });
+}
+
 function getAdminPass(){ return localStorage.getItem(ADMIN_PASS_KEY) || null; }
 function setAdminPassValue(p){
   if(!p){ localStorage.removeItem(ADMIN_PASS_KEY); showToast('Admin password removed', 'success'); }
@@ -53,28 +110,35 @@ function setTeacherPinValue(p){
   else { localStorage.setItem(TEACHER_PIN_KEY, p); showToast('Teacher PIN set', 'success'); }
 }
 
-function verifyAdminPrompt(){
+async function verifyAdminPrompt(){
   const pass = getAdminPass();
   if(!pass){ showToast('No admin password set. Please set one in Admin.', 'warning'); return true; }
-  const attempt = prompt('Enter admin password:');
+  const attempt = await showPromptDialog('Enter admin password:', 'password', 'Password');
+  if(attempt === null){ showToast('Admin access cancelled', 'warning'); return false; }
   if(attempt === pass){ return true; }
   showToast('Incorrect password', 'error');
   return false;
 }
 
-function requireTeacherAccess(){
+async function requireTeacherAccess(){
+  if(teacherAccessGranted){ return true; }
   const pin = getTeacherPin();
   if(pin){
-    const attempt = prompt('Enter teacher PIN:');
+    const attempt = await showPromptDialog('Enter teacher PIN:', 'password', 'PIN');
+    if(attempt === null){ showToast('Teacher access cancelled', 'warning'); return false; }
     if(attempt !== pin){ showToast('Incorrect teacher PIN', 'error'); return false; }
+    teacherAccessGranted = true;
     return true;
   }
   const pass = getAdminPass();
   if(pass){
-    const attempt = prompt('Enter admin password:');
+    const attempt = await showPromptDialog('Enter admin password:', 'password', 'Password');
+    if(attempt === null){ showToast('Admin access cancelled', 'warning'); return false; }
     if(attempt !== pass){ showToast('Incorrect admin password', 'error'); return false; }
+    teacherAccessGranted = true;
     return true;
   }
+  teacherAccessGranted = true;
   return true;
 }
 
@@ -104,6 +168,7 @@ const resultsList = document.getElementById('resultsList');
 const exportXlsxBtn = document.getElementById('exportXlsx');
 const resetElectionBtn = document.getElementById('resetElection');
 const toastContainer = document.getElementById('toastContainer');
+const dialogOverlay = document.getElementById('dialogOverlay');
 
 let state = {
   madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU',
@@ -111,6 +176,7 @@ let state = {
   currentRoleIndex: 0,
   mode: 'idle'
 };
+let teacherAccessGranted = false;
 
 function loadState(){
   try{
@@ -172,7 +238,7 @@ function renderRolesList(){
     const nameInput = document.createElement('input');
     nameInput.className = 'candidateName';
     nameInput.placeholder = 'Candidate name';
-    const photoInput = document.createElement('input');
+    let photoInput = document.createElement('input');
     photoInput.type = 'file';
     photoInput.accept = 'image/*';
     photoInput.className = 'candidatePhoto';
@@ -183,12 +249,20 @@ function renderRolesList(){
       const name = nameInput.value.trim();
       const file = photoInput.files[0];
       if(!name){ showToast('Candidate name required', 'warning'); return; }
+      const resetPhotoInput = ()=>{
+        const freshInput = document.createElement('input');
+        freshInput.type = 'file';
+        freshInput.accept = 'image/*';
+        freshInput.className = 'candidatePhoto';
+        photoInput.replaceWith(freshInput);
+        photoInput = freshInput;
+      };
       if(file){
         const reader = new FileReader();
         reader.onload = ()=>{
           addCandidate(role.id, name, reader.result);
           nameInput.value = '';
-          photoInput.value = '';
+          resetPhotoInput();
           renderRolesList();
           saveState();
         };
@@ -196,6 +270,7 @@ function renderRolesList(){
       }else{
         addCandidate(role.id, name, null);
         nameInput.value = '';
+        resetPhotoInput();
         renderRolesList();
         saveState();
       }
@@ -208,8 +283,8 @@ function renderRolesList(){
     const removeRoleBtn = document.createElement('button');
     removeRoleBtn.className = 'btn danger';
     removeRoleBtn.textContent = 'Remove Role';
-    removeRoleBtn.addEventListener('click', ()=>{
-      if(confirm('Remove role and its candidates?')){ removeRole(role.id); }
+    removeRoleBtn.addEventListener('click', async ()=>{
+      if(await showConfirmDialog('Remove role and its candidates?')){ removeRole(role.id); }
     });
     roleItem.appendChild(removeRoleBtn);
 
@@ -448,9 +523,9 @@ addRoleBtn.addEventListener('click', ()=>{
 startElectionBtn.addEventListener('click', startElection);
 bigStartBtn.addEventListener('click', startElection);
 
-function startElection(){
+async function startElection(){
   if(state.roles.length === 0){ showToast('Add roles first in Admin panel', 'warning'); return; }
-  if(!requireTeacherAccess()){ return; }
+  if(!await requireTeacherAccess()){ return; }
   state.currentRoleIndex = 0;
   state.mode = 'voting';
   votingArea.classList.remove('hidden');
@@ -463,8 +538,8 @@ function startElection(){
   saveState();
 }
 
-viewResultsBtn.addEventListener('click', ()=>{
-  if(!verifyAdminPrompt()){ return; }
+viewResultsBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
   state.mode = 'results';
   votingArea.classList.add('hidden');
   votingArea.classList.remove('voting-area-active');
@@ -472,18 +547,19 @@ viewResultsBtn.addEventListener('click', ()=>{
   resultsArea.classList.remove('hidden');
   renderResults();
 });
-
-exportXlsxBtn.addEventListener('click', ()=>{
-  if(!verifyAdminPrompt()){ return; }
+ 
+exportXlsxBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
   exportToXlsx();
 });
 
-resetElectionBtn.addEventListener('click', ()=>{
-  if(!verifyAdminPrompt()){ return; }
-  if(confirm('Reset EVERYTHING (roles, candidates, votes, and settings)?')){
+resetElectionBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
+  if(await showConfirmDialog('Reset EVERYTHING (roles, candidates, votes, and settings)?')){
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(ADMIN_PASS_KEY);
     localStorage.removeItem(TEACHER_PIN_KEY);
+    teacherAccessGranted = false;
     state = { madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU', roles: [], currentRoleIndex: 0, mode: 'idle' };
     renderRolesList();
     votingArea.classList.add('hidden');
@@ -495,45 +571,48 @@ resetElectionBtn.addEventListener('click', ()=>{
   }
 });
 
-setAdminPassBtn.addEventListener('click', ()=>{
+setAdminPassBtn.addEventListener('click', async ()=>{
   const first = adminPassInput.value.trim();
   const second = adminPassConfirmInput.value.trim();
   if(!first && !second){
-    if(confirm('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; }
+    if(await showConfirmDialog('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; teacherAccessGranted = false; }
     return;
   }
   if(first !== second){ showToast('Admin passwords do not match', 'error'); return; }
   setAdminPassValue(first);
+  teacherAccessGranted = false;
   adminPassInput.value = '';
   adminPassConfirmInput.value = '';
 });
 
-clearAdminPassBtn.addEventListener('click', ()=>{
-  if(confirm('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; }
+clearAdminPassBtn.addEventListener('click', async ()=>{
+  if(await showConfirmDialog('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; }
 });
 
-setTeacherPinBtn.addEventListener('click', ()=>{
+setTeacherPinBtn.addEventListener('click', async ()=>{
   const first = teacherPinInput.value.trim();
   const second = teacherPinConfirmInput.value.trim();
   if(!first && !second){
-    if(confirm('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; }
+    if(await showConfirmDialog('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; teacherAccessGranted = false; }
     return;
   }
   if(!/^\d+$/.test(first) || !/^\d+$/.test(second)){ showToast('Teacher PIN must contain digits only', 'warning'); return; }
   if(first !== second){ showToast('Teacher PINs do not match', 'error'); return; }
   setTeacherPinValue(first);
+  teacherAccessGranted = false;
   teacherPinInput.value = '';
   teacherPinConfirmInput.value = '';
 });
 
-clearTeacherPinBtn.addEventListener('click', ()=>{
-  if(confirm('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; }
+clearTeacherPinBtn.addEventListener('click', async ()=>{
+  if(await showConfirmDialog('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; }
 });
 
-adminToggle.addEventListener('click', ()=>{
+adminToggle.addEventListener('click', async ()=>{
   const pass = getAdminPass();
   if(pass){
-    const attempt = prompt('Enter admin password:');
+    const attempt = await showPromptDialog('Enter admin password:', 'password', 'Password');
+    if(attempt === null){ showToast('Admin access cancelled', 'warning'); return; }
     if(attempt === pass){ adminPanel.classList.toggle('hidden'); }
     else { showToast('Incorrect password', 'error'); }
   } else {

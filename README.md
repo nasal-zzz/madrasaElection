@@ -1,7 +1,7 @@
-MISBAHUL HUDHA MADRASA KAMBALAKKALLU — Election web app (device-based)
+MISBAHUL HUDHA MADRASA KAMBALAKKALLU — Election web app
 
 Overview
-- Single-page static app (HTML/CSS/JS). Designed for voting performed on a single device (phone) as requested.
+- Single-page static app (HTML/CSS/JS). Designed for voting performed on a shared device (phone) as requested.
 - Admin panel to add roles and candidates (with photos). Candidate photos are stored locally in the device (encoded as data URLs in localStorage).
 - Voting shows one role at a time; after a vote the interface advances to the next role automatically.
 - Results are stored in localStorage and can be exported as Excel (.xlsx) using SheetJS.
@@ -9,7 +9,7 @@ Overview
 
 How to use locally
 1. Open the folder `madrasa-election` in a web browser (open index.html).
-2. To add a logo, place your logo file as `assets/logo.png` in the `madrasa-election` folder (create an `assets` folder).
+2. (Optional) If you want to show the madrasa logo, add a file named `assets/logo.png` in the `madrasa-election` folder.
 3. Click "Admin Panel" to add roles. For each role, add candidates and optionally upload photos.
 4. Click "Start Voting" to begin. Each voter uses the same device to vote for each role in sequence.
 
