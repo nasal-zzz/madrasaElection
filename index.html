@@ -29,8 +29,6 @@
         </div>
         <div id="rolesList" class="roles-list"></div>
         <hr />
-        <div class="instructions">To include the madrasa logo, place a file named <code>assets/logo.png</code> in the project folder. You can add candidate photos when creating candidates; images are stored locally in the device.</div>
-        <hr />
         <div class="admin-settings">
           <div class="admin-password">
             <h3>Admin Password</h3>
@@ -53,6 +51,12 @@
         </div>
       </section>
 
+      <section id="startScreen" class="card start-screen">
+        <h2>Ready to begin voting</h2>
+        <p class="start-description">After the admin sets up the roles and candidates, press the button below to begin the next voter’s ballot.</p>
+        <button id="bigStartBtn" class="btn primary large">Start Voting</button>
+      </section>
+
       <section id="votingArea" class="card hidden">
         <h2 id="votingRoleTitle">Voting</h2>
         <p id="votingHint" class="vote-hint">Tap a candidate to cast your vote. The app will move to the next role automatically.</p>
@@ -71,8 +75,11 @@
     </main>
 
     <footer class="footer">
-      <small>Made for MISBAHUL HUDHA MADRASA KAMBALAKKALLU — Voting app (anonymous, device-based)</small>
+    <small>Made for MISBAHUL HUDHA MADRASA KAMBALAKKALLU</small>
     </footer>
+  </div>
+  <div class="background-animation" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 

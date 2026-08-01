@@ -84,6 +84,8 @@ const addRoleBtn = document.getElementById('addRole');
 const roleNameInput = document.getElementById('roleName');
 const rolesList = document.getElementById('rolesList');
 const startElectionBtn = document.getElementById('startElection');
+const bigStartBtn = document.getElementById('bigStartBtn');
+const startScreen = document.getElementById('startScreen');
 const votingArea = document.getElementById('votingArea');
 const votingRoleTitle = document.getElementById('votingRoleTitle');
 const votingHint = document.getElementById('votingHint');
@@ -246,6 +248,7 @@ function renderVotingRole(){
   const role = state.roles[state.currentRoleIndex];
   votingRoleTitle.textContent = `Vote for: ${role.name}`;
   votingHint.textContent = 'Tap a candidate to cast your vote. The app will move to the next role automatically.';
+  startScreen.classList.add('hidden');
   candidatesGrid.innerHTML = '';
 
   if(role.candidates.length === 0){
@@ -303,6 +306,9 @@ function castVote(roleId, candId){
   } else {
     setTimeout(()=>{
       votingArea.classList.add('hidden');
+      votingArea.classList.remove('voting-area-active');
+      startScreen.classList.remove('hidden');
+      state.mode = 'idle';
       playFinish();
       showCompletionOverlay();
     }, 700);
@@ -381,6 +387,7 @@ function printConfirmation(overlay){
 
 function renderResults(){
   resultsList.innerHTML = '';
+  startScreen.classList.add('hidden');
   state.roles.forEach((role, idx)=>{
     const card = document.createElement('div');
     card.className = 'card';
@@ -433,24 +440,28 @@ function exportToXlsx(){
 
 addRoleBtn.addEventListener('click', ()=>{
   const name = roleNameInput.value.trim();
-  if(!name){ alert('Role name required'); return; }
+  if(!name){ showToast('Role name required', 'warning'); return; }
   addRole(name);
   roleNameInput.value = '';
 });
 
-startElectionBtn.addEventListener('click', ()=>{
+startElectionBtn.addEventListener('click', startElection);
+bigStartBtn.addEventListener('click', startElection);
+
+function startElection(){
   if(state.roles.length === 0){ showToast('Add roles first in Admin panel', 'warning'); return; }
   if(!requireTeacherAccess()){ return; }
   state.currentRoleIndex = 0;
   state.mode = 'voting';
   votingArea.classList.remove('hidden');
   votingArea.classList.add('voting-area-active');
+  startScreen.classList.add('hidden');
   adminPanel.classList.add('hidden');
   resultsArea.classList.add('hidden');
   playStart();
   renderVotingRole();
   saveState();
-});
+}
 
 viewResultsBtn.addEventListener('click', ()=>{
   if(!verifyAdminPrompt()){ return; }
@@ -478,6 +489,7 @@ resetElectionBtn.addEventListener('click', ()=>{
     votingArea.classList.add('hidden');
     votingArea.classList.remove('voting-area-active');
     resultsArea.classList.add('hidden');
+    startScreen.classList.remove('hidden');
     adminPanel.classList.add('hidden');
     saveState();
   }
@@ -523,7 +535,7 @@ adminToggle.addEventListener('click', ()=>{
   if(pass){
     const attempt = prompt('Enter admin password:');
     if(attempt === pass){ adminPanel.classList.toggle('hidden'); }
-    else { alert('Incorrect password'); }
+    else { showToast('Incorrect password', 'error'); }
   } else {
     adminPanel.classList.toggle('hidden');
     showToast('No admin password set. Set one to protect Admin and Results.', 'warning');
