@@ -173,13 +173,38 @@ const resetElectionBtn = document.getElementById('resetElection');
 const toastContainer = document.getElementById('toastContainer');
 const dialogOverlay = document.getElementById('dialogOverlay');
 
+// Admin control buttons
+const stopVotingBtn = document.getElementById('stopVotingBtn');
+const resumeVotingBtn = document.getElementById('resumeVotingBtn');
+const resetVotesBtn = document.getElementById('resetVotesBtn');
+const deleteElectionBtn = document.getElementById('deleteElectionBtn');
+
+// Voter counter display (create in header if not present)
+let voterCountDisplay = document.getElementById('voterCountDisplay');
+if(!voterCountDisplay){
+  const el = document.createElement('div');
+  el.id = 'voterCountDisplay';
+  el.style.fontWeight = '700';
+  el.style.marginLeft = '8px';
+  const branding = document.querySelector('.branding');
+  if(branding) branding.appendChild(el);
+  voterCountDisplay = el;
+}
+
 let state = {
   madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU',
   roles: [],
   currentRoleIndex: 0,
-  mode: 'idle'
+  mode: 'idle',
+  voterCount: 0
 };
 let teacherAccessGranted = sessionStorage.getItem('teacher_access_granted') === '1';
+let votingLocked = false; // prevent double votes during transition
+
+function updateVoterCountDisplay(){
+  if(!voterCountDisplay) return;
+  voterCountDisplay.innerHTML = `Voters: <span class="voter-count-badge">${state.voterCount || 0}</span>`;
+}
 
 function loadState(){
   try{
@@ -400,6 +425,7 @@ function renderVotingRole(){
     const button = document.createElement('button');
     button.className = 'btn primary vote-btn';
     button.textContent = 'Vote';
+    button.disabled = (votingLocked || state.mode !== 'voting');
     button.addEventListener('click', ()=> castVote(role.id, candidate.id));
     card.appendChild(button);
 
@@ -407,11 +433,28 @@ function renderVotingRole(){
   });
 }
 
+function disableAllVoteButtons(){
+  votingLocked = true;
+  const btns = candidatesGrid.querySelectorAll('.vote-btn');
+  btns.forEach(b=>{ b.disabled = true; b.classList.add('disabled'); });
+}
+function enableAllVoteButtons(){
+  votingLocked = false;
+  const btns = candidatesGrid.querySelectorAll('.vote-btn');
+  btns.forEach(b=>{ b.disabled = false; b.classList.remove('disabled'); });
+}
+
 function castVote(roleId, candId){
+  if(votingLocked || state.mode !== 'voting'){
+    // ignore repeated clicks or if voting is paused
+    return;
+  }
+  disableAllVoteButtons();
+
   const role = state.roles.find((r)=> r.id === roleId);
-  if(!role) return;
+  if(!role) { enableAllVoteButtons(); return; }
   const candidate = role.candidates.find((c)=> c.id === candId);
-  if(!candidate) return;
+  if(!candidate) { enableAllVoteButtons(); return; }
 
   candidate.votes = (candidate.votes || 0) + 1;
   saveState();
@@ -421,14 +464,20 @@ function castVote(roleId, candId){
   if(state.currentRoleIndex < state.roles.length - 1){
     setTimeout(()=>{
       state.currentRoleIndex += 1;
+      enableAllVoteButtons();
       renderVotingRole();
     }, 700);
   } else {
     setTimeout(()=>{
+      // completed ballot
+      state.voterCount = (state.voterCount || 0) + 1;
+      saveState();
+      updateVoterCountDisplay();
       votingArea.classList.add('hidden');
       votingArea.classList.remove('voting-area-active');
       startScreen.classList.remove('hidden');
       state.mode = 'idle';
+      votingLocked = false;
       playFinish();
       showCompletionOverlay();
     }, 700);
@@ -511,6 +560,19 @@ function printConfirmation(overlay){
 function renderResults(){
   resultsList.innerHTML = '';
   startScreen.classList.add('hidden');
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'center';
+  header.style.marginBottom = '8px';
+  const t = document.createElement('h3');
+  t.textContent = 'Results';
+  const vc = document.createElement('div');
+  vc.innerHTML = `Voters so far: <strong>${state.voterCount || 0}</strong>`;
+  header.appendChild(t);
+  header.appendChild(vc);
+  resultsList.appendChild(header);
+
   state.roles.forEach((role, idx)=>{
     const card = document.createElement('div');
     card.className = 'card';
@@ -594,6 +656,7 @@ viewResultsBtn.addEventListener('click', async ()=>{
   adminPanel.classList.add('hidden');
   resultsArea.classList.remove('hidden');
   renderResults();
+  updateVoterCountDisplay();
 });
  
 exportXlsxBtn.addEventListener('click', async ()=>{
@@ -608,8 +671,10 @@ resetElectionBtn.addEventListener('click', async ()=>{
     localStorage.removeItem(ADMIN_PASS_KEY);
     localStorage.removeItem(TEACHER_PIN_KEY);
     teacherAccessGranted = false;
-    state = { madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU', roles: [], currentRoleIndex: 0, mode: 'idle' };
+    sessionStorage.removeItem('teacher_access_granted');
+    state = { madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU', roles: [], currentRoleIndex: 0, mode: 'idle', voterCount: 0 };
     renderRolesList();
+    updateVoterCountDisplay();
     votingArea.classList.add('hidden');
     votingArea.classList.remove('voting-area-active');
     resultsArea.classList.add('hidden');
@@ -631,6 +696,7 @@ setAdminPassBtn.addEventListener('click', async ()=>{
   teacherAccessGranted = false;
   adminPassInput.value = '';
   adminPassConfirmInput.value = '';
+  updateVoterCountDisplay();
 });
 
 clearAdminPassBtn.addEventListener('click', async ()=>{
@@ -666,6 +732,60 @@ adminToggle.addEventListener('click', async ()=>{
   } else {
     adminPanel.classList.toggle('hidden');
     showToast('No admin password set. Set one to protect Admin and Results.', 'warning');
+  }
+});
+
+// Admin control handlers
+stopVotingBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
+  state.mode = 'paused';
+  disableAllVoteButtons();
+  showToast('Voting paused by admin', 'warning');
+  saveState();
+});
+resumeVotingBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
+  if(state.mode !== 'voting'){
+    state.mode = 'voting';
+    votingArea.classList.remove('hidden');
+    votingArea.classList.add('voting-area-active');
+    startScreen.classList.add('hidden');
+    renderVotingRole();
+    enableAllVoteButtons();
+    showToast('Voting resumed by admin', 'success');
+    saveState();
+  }
+});
+resetVotesBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
+  if(await showConfirmDialog('Reset only vote counts (keep roles & candidates)?')){
+    state.roles.forEach(r=> r.candidates.forEach(c=> c.votes = 0));
+    state.voterCount = 0;
+    saveState();
+    renderRolesList();
+    renderResults();
+    updateVoterCountDisplay();
+    showToast('Vote counts reset', 'success');
+  }
+});
+deleteElectionBtn.addEventListener('click', async ()=>{
+  if(!await verifyAdminPrompt()){ return; }
+  if(await showConfirmDialog('Delete the entire election (roles, candidates, votes, and settings)?')){
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(ADMIN_PASS_KEY);
+    localStorage.removeItem(TEACHER_PIN_KEY);
+    teacherAccessGranted = false;
+    sessionStorage.removeItem('teacher_access_granted');
+    state = { madrasaName: state.madrasaName || 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU', roles: [], currentRoleIndex: 0, mode: 'idle', voterCount: 0 };
+    renderRolesList();
+    updateVoterCountDisplay();
+    votingArea.classList.add('hidden');
+    votingArea.classList.remove('voting-area-active');
+    resultsArea.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+    adminPanel.classList.add('hidden');
+    saveState();
+    showToast('Election deleted', 'success');
   }
 });
 

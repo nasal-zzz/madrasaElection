@@ -14,6 +14,8 @@ body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradie
 .branding{display:flex;align-items:center;gap:12px}
 .branding img{height:64px;width:64px;object-fit:contain;border-radius:8px;box-shadow:0 6px 18px rgba(11,127,163,0.12)}
 .branding h1{font-size:1.2rem;margin:0;color:var(--accent)}
+#voterCountDisplay{font-size:0.9rem;color:var(--muted);margin-left:8px}
+.voter-count-badge{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;padding:6px 10px;border-radius:999px;font-weight:800;margin-left:10px;box-shadow:0 8px 18px rgba(11,127,163,0.12)}
 .controls{display:flex;gap:8px;flex-wrap:wrap}
 .btn{background:transparent;border:1px solid rgba(11,127,163,0.12);padding:8px 12px;border-radius:8px;cursor:pointer;transition:transform .12s ease,box-shadow .12s}
 .btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(11,127,163,0.08)}
