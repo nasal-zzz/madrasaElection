@@ -430,6 +430,7 @@ function renderVotingRole(){
     button.className = 'btn primary vote-btn';
     button.textContent = 'Vote';
     button.disabled = (votingLocked || state.mode !== 'voting');
+    if(!button.disabled){ button.classList.add('pulse'); } else { button.classList.remove('pulse'); }
     button.addEventListener('click', ()=> castVote(role.id, candidate.id));
     card.appendChild(button);
 
@@ -440,12 +441,12 @@ function renderVotingRole(){
 function disableAllVoteButtons(){
   votingLocked = true;
   const btns = candidatesGrid.querySelectorAll('.vote-btn');
-  btns.forEach(b=>{ b.disabled = true; b.classList.add('disabled'); });
+  btns.forEach(b=>{ b.disabled = true; b.classList.add('disabled'); b.classList.remove('pulse'); });
 }
 function enableAllVoteButtons(){
   votingLocked = false;
   const btns = candidatesGrid.querySelectorAll('.vote-btn');
-  btns.forEach(b=>{ b.disabled = false; b.classList.remove('disabled'); });
+  btns.forEach(b=>{ b.disabled = false; b.classList.remove('disabled'); if(state.mode === 'voting') b.classList.add('pulse'); });
 }
 
 function castVote(roleId, candId){

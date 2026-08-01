@@ -51,6 +51,15 @@ input[type=text], input[type=password], input{padding:10px;border-radius:10px;bo
   .voting-card .vote-btn{min-width:100px;padding:10px 14px;font-size:1rem}
   .voting-card .candidate-name{font-size:1rem}
 }
+
+/* Pulse animation for active vote button */
+@keyframes votePulseBtn{
+  0%{transform:scale(1);box-shadow:0 8px 20px rgba(11,127,163,0.10)}
+  50%{transform:scale(1.03);box-shadow:0 18px 36px rgba(11,127,163,0.18)}
+  100%{transform:scale(1);box-shadow:0 8px 20px rgba(11,127,163,0.10)}
+}
+.vote-btn.pulse{animation:votePulseBtn 1.6s ease-in-out infinite}
+.vote-btn.disabled{animation:none !important;opacity:0.65}
 .vote-hint{color:var(--muted);margin-top:-4px}
 .vote-btn{width:100%;padding:12px 14px;font-weight:700;margin-top:6px}
 .instructions{font-size:.95rem;color:var(--muted)}
