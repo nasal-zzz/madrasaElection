@@ -188,10 +188,43 @@ function loadState(){
   }catch(e){ console.error('Load state', e); }
 }
 function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  }catch(error){
+    console.error('Save state failed', error);
+    showToast('Unable to save election data. Storage may be full or the photo is too large.', 'error', 5600);
+    return false;
+  }
 }
 
 function uid(prefix='id'){ return prefix + '_' + Math.random().toString(36).slice(2, 9); }
+
+function processImageFile(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = ()=> reject(new Error('Photo read failed. Please choose another image.'));
+    reader.onload = ()=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxDimension = 900;
+        const scale = Math.min(1, maxDimension / img.width, maxDimension / img.height);
+        const width = Math.round(img.width * scale);
+        const height = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.78);
+        resolve(compressed);
+      };
+      img.onerror = ()=> reject(new Error('Failed to process image. Please try a different photo.'));
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 function renderRolesList(){
   rolesList.innerHTML = '';
@@ -248,10 +281,14 @@ function renderRolesList(){
     const addBtn = document.createElement('button');
     addBtn.className = 'btn';
     addBtn.textContent = 'Add Candidate';
-    addBtn.addEventListener('click', ()=>{
+    addBtn.addEventListener('click', async ()=>{
       const name = nameInput.value.trim();
       const file = photoInput.files[0];
       if(!name){ showToast('Candidate name required', 'warning'); return; }
+      if(file && file.size > 3200000){
+        showToast('Photo too large. Use a smaller image (under 3MB) for the best mobile experience.', 'warning', 5200);
+        return;
+      }
       const resetPhotoInput = ()=>{
         const freshInput = document.createElement('input');
         freshInput.type = 'file';
@@ -260,23 +297,27 @@ function renderRolesList(){
         photoInput.replaceWith(freshInput);
         photoInput = freshInput;
       };
+      let photoDataUrl = null;
       if(file){
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          addCandidate(role.id, name, reader.result);
-          nameInput.value = '';
+        try{
+          photoDataUrl = await processImageFile(file);
+        }catch(error){
+          console.error('Image processing error', error);
+          showToast(error.message || 'Unable to upload image. Please choose a smaller image.', 'error', 5200);
           resetPhotoInput();
-          renderRolesList();
-          saveState();
-        };
-        reader.readAsDataURL(file);
-      }else{
-        addCandidate(role.id, name, null);
-        nameInput.value = '';
-        resetPhotoInput();
-        renderRolesList();
-        saveState();
+          return;
+        }
       }
+      const roleObj = state.roles.find((r)=> r.id === role.id);
+      const candidate = addCandidate(role.id, name, photoDataUrl);
+      nameInput.value = '';
+      resetPhotoInput();
+      if(!saveState()){
+        if(roleObj){ roleObj.candidates = roleObj.candidates.filter((cand)=> cand.id !== (candidate && candidate.id)); }
+        renderRolesList();
+        return;
+      }
+      renderRolesList();
     });
     addRow.appendChild(nameInput);
     addRow.appendChild(photoInput);
@@ -308,9 +349,10 @@ function removeRole(roleId){
 }
 function addCandidate(roleId, name, photoDataUrl){
   const role = state.roles.find((r)=> r.id === roleId);
-  if(!role) return;
-  role.candidates.push({ id: uid('cand'), name, photoDataUrl, votes: 0 });
-  saveState();
+  if(!role) return null;
+  const candidate = { id: uid('cand'), name, photoDataUrl, votes: 0 };
+  role.candidates.push(candidate);
+  return candidate;
 }
 function removeCandidate(roleId, candId){
   const role = state.roles.find((r)=> r.id === roleId);
