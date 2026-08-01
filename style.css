@@ -35,6 +35,22 @@ input[type=text], input[type=password], input{padding:10px;border-radius:10px;bo
 .candidate-name{font-weight:700;color:var(--text)}
 .candidate-votes{color:var(--muted);font-size:.85rem}
 .candidates-grid{display:flex;flex-direction:column;gap:12px;align-items:center}
+
+/* Voting view card: larger image on the left, info center, vote button on right */
+.voting-card{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;border-radius:14px;background:linear-gradient(180deg,#ffffff,#f6fbff);box-shadow:0 10px 28px rgba(11,127,163,0.06)}
+.voting-card .candidate-photo{width:96px;height:96px;border-radius:12px;border:2px solid rgba(11,127,163,0.08);object-fit:cover}
+.voting-card .candidate-info{flex:1;margin-left:12px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.voting-card .candidate-name{font-size:1.05rem;font-weight:800;color:var(--text)}
+.voting-card .vote-muted{color:var(--muted);font-size:0.9rem;margin-top:6px}
+.voting-card .vote-btn{min-width:120px;padding:12px 16px;font-weight:800;font-size:1.03rem;border-radius:12px}
+.voting-card .vote-btn.disabled{opacity:0.6}
+
+@media (max-width:480px){
+  .voting-card{gap:12px;padding:10px}
+  .voting-card .candidate-photo{width:84px;height:84px}
+  .voting-card .vote-btn{min-width:100px;padding:10px 14px;font-size:1rem}
+  .voting-card .candidate-name{font-size:1rem}
+}
 .vote-hint{color:var(--muted);margin-top:-4px}
 .vote-btn{width:100%;padding:12px 14px;font-weight:700;margin-top:6px}
 .instructions{font-size:.95rem;color:var(--muted)}

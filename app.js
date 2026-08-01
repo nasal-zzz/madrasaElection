@@ -406,21 +406,25 @@ function renderVotingRole(){
 
   role.candidates.forEach((candidate)=>{
     const card = document.createElement('div');
-    card.className = 'candidate-card';
-    card.style.flexDirection = 'column';
-    card.style.alignItems = 'flex-start';
-    card.style.width = '100%';
+    card.className = 'candidate-card voting-card';
 
     const image = document.createElement('img');
     image.className = 'candidate-photo';
     image.src = candidate.photoDataUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="100%" height="100%" fill="%230b7fa3" /><text x="50%" y="50%" fill="white" font-size="18" text-anchor="middle" dominant-baseline="central">No Image</text></svg>';
-    image.style.marginBottom = '8px';
     card.appendChild(image);
 
+    const infoWrap = document.createElement('div');
+    infoWrap.className = 'candidate-info';
     const name = document.createElement('div');
     name.className = 'candidate-name';
     name.textContent = candidate.name;
-    card.appendChild(name);
+    infoWrap.appendChild(name);
+    // optional vote hint or muted text
+    const votesMuted = document.createElement('div');
+    votesMuted.className = 'candidate-votes vote-muted';
+    votesMuted.textContent = '';
+    infoWrap.appendChild(votesMuted);
+    card.appendChild(infoWrap);
 
     const button = document.createElement('button');
     button.className = 'btn primary vote-btn';
