@@ -63,6 +63,12 @@ input[type=text], input[type=password], input{padding:10px;border-radius:10px;bo
 @keyframes votePulse{from{transform:translateY(0)}to{transform:translateY(-4px)}}
 .confirmation-card{position:relative}
 .confirmation-card{background:#fff;border-radius:18px;padding:24px;max-width:560px;width:100%;box-shadow:0 16px 50px rgba(0,0,0,0.18)}
+.completion-card{border:1px solid rgba(11,127,163,0.14);background:linear-gradient(180deg,rgba(255,255,255,0.96),#fff);}
+.completion-badge{display:inline-block;padding:8px 14px;border-radius:999px;background:rgba(11,127,163,0.14);color:var(--accent);font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:.02em;font-size:.86rem;}
+.completion-title{margin:0 0 10px;font-size:1.5rem;color:#0b4d76;}
+.completion-text{margin:8px 0;color:#384b5c;line-height:1.6;}
+.completion-celebrate{margin:12px 0 6px;color:#0b7fa3;font-weight:700;font-size:1rem;}
+.completion-note{margin:4px 0 16px;color:#5d3a7c;font-weight:600;}
 .qr-grid{display:grid;grid-template-columns:repeat(9,12px);gap:2px;justify-content:center;margin:16px 0}
 .qr-cell{width:12px;height:12px;border-radius:2px;background:#e7eef4}
 .qr-cell.filled{background:var(--accent)}

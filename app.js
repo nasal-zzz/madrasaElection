@@ -479,12 +479,13 @@ function showCompletionOverlay(){
   const overlay = document.createElement('div');
   overlay.className = 'confirmation-overlay';
   overlay.innerHTML = `
-    <div class="confirmation-card">
-      <h2>Thank you for voting</h2>
-      <p>${state.madrasaName}</p>
-      <p>Your vote has been recorded successfully. This confirmation can be printed for the voter record.</p>
-      <p>നിങ്ങൾ വോട്ടിംഗ് വിജയകരമായി പൂർത്തിയാക്കി, വിരലിൽ മാച്ച് ചെയ്യാൻ മറക്കരുത്.</p>
-      <p>شكرًا جزاك الله خيرًا</p>
+    <div class="confirmation-card completion-card">
+      <div class="completion-badge">✅ Voting Complete!</div>
+      <h2 class="completion-title">Thank you for voting!</h2>
+      <p class="completion-text">${state.madrasaName}</p>
+      <p class="completion-text">Your vote has been recorded perfectly. Your participation makes the election stronger.</p>
+      <p class="completion-celebrate">നിങ്ങൾ വോട്ടിംഗ് വിജയകരമായി പൂർത്തിയാക്കി, വിരലിൽ മഷി ചെയ്യാൻ മറക്കരുത്.</p>
+      <p class="completion-note">شكرًا جزاك الله خيرًا</p>
       <div class="qr-grid">${createQrPattern()}</div>
       <div class="print-actions">
         <button class="btn primary" id="printConfirmationBtn">Print Confirmation</button>
