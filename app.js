@@ -34,23 +34,31 @@ function playStart(){ playTone(880,0.14,'sine',0.18); setTimeout(()=>playTone(13
 function playClick(){ playTone(1200,0.06,'square',0.14); }
 function playFinish(){ playTone(660,0.18,'sine',0.18); setTimeout(()=>playTone(880,0.12,'sine',0.16),120); }
 
+function showToast(message, type='info', duration=2800){
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span><span>${message}</span>`;
+  toastContainer.appendChild(toast);
+  setTimeout(()=>{ toast.classList.add('hide'); setTimeout(()=>toast.remove(), 260); }, duration);
+}
+
 function getAdminPass(){ return localStorage.getItem(ADMIN_PASS_KEY) || null; }
 function setAdminPassValue(p){
-  if(!p){ localStorage.removeItem(ADMIN_PASS_KEY); alert('Admin password removed'); }
-  else { localStorage.setItem(ADMIN_PASS_KEY, p); alert('Admin password set'); }
+  if(!p){ localStorage.removeItem(ADMIN_PASS_KEY); showToast('Admin password removed', 'success'); }
+  else { localStorage.setItem(ADMIN_PASS_KEY, p); showToast('Admin password set', 'success'); }
 }
 function getTeacherPin(){ return localStorage.getItem(TEACHER_PIN_KEY) || null; }
 function setTeacherPinValue(p){
-  if(!p){ localStorage.removeItem(TEACHER_PIN_KEY); alert('Teacher PIN removed'); }
-  else { localStorage.setItem(TEACHER_PIN_KEY, p); alert('Teacher PIN set'); }
+  if(!p){ localStorage.removeItem(TEACHER_PIN_KEY); showToast('Teacher PIN removed', 'success'); }
+  else { localStorage.setItem(TEACHER_PIN_KEY, p); showToast('Teacher PIN set', 'success'); }
 }
 
 function verifyAdminPrompt(){
   const pass = getAdminPass();
-  if(!pass){ return true; }
+  if(!pass){ showToast('No admin password set. Please set one in Admin.', 'warning'); return true; }
   const attempt = prompt('Enter admin password:');
   if(attempt === pass){ return true; }
-  alert('Incorrect password');
+  showToast('Incorrect password', 'error');
   return false;
 }
 
@@ -58,13 +66,13 @@ function requireTeacherAccess(){
   const pin = getTeacherPin();
   if(pin){
     const attempt = prompt('Enter teacher PIN:');
-    if(attempt !== pin){ alert('Incorrect teacher PIN'); return false; }
+    if(attempt !== pin){ showToast('Incorrect teacher PIN', 'error'); return false; }
     return true;
   }
   const pass = getAdminPass();
   if(pass){
     const attempt = prompt('Enter admin password:');
-    if(attempt !== pass){ alert('Incorrect admin password'); return false; }
+    if(attempt !== pass){ showToast('Incorrect admin password', 'error'); return false; }
     return true;
   }
   return true;
@@ -93,6 +101,7 @@ const resultsArea = document.getElementById('resultsArea');
 const resultsList = document.getElementById('resultsList');
 const exportXlsxBtn = document.getElementById('exportXlsx');
 const resetElectionBtn = document.getElementById('resetElection');
+const toastContainer = document.getElementById('toastContainer');
 
 let state = {
   madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU',
@@ -171,7 +180,7 @@ function renderRolesList(){
     addBtn.addEventListener('click', ()=>{
       const name = nameInput.value.trim();
       const file = photoInput.files[0];
-      if(!name){ alert('Candidate name required'); return; }
+      if(!name){ showToast('Candidate name required', 'warning'); return; }
       if(file){
         const reader = new FileReader();
         reader.onload = ()=>{
@@ -232,7 +241,7 @@ function removeCandidate(roleId, candId){
 }
 
 function renderVotingRole(){
-  if(state.roles.length === 0){ alert('No roles defined. Please add them in Admin panel.'); return; }
+  if(state.roles.length === 0){ showToast('No roles defined. Please add them in Admin panel.', 'warning'); return; }
   state.currentRoleIndex = Math.max(0, Math.min(state.currentRoleIndex, state.roles.length - 1));
   const role = state.roles[state.currentRoleIndex];
   votingRoleTitle.textContent = `Vote for: ${role.name}`;
@@ -409,7 +418,7 @@ function renderResults(){
 }
 
 function exportToXlsx(){
-  if(typeof window.XLSX === 'undefined'){ alert('Excel library was not loaded.'); return; }
+  if(typeof window.XLSX === 'undefined'){ showToast('Excel export library failed to load.', 'error'); return; }
   const rows = [['Role', 'Candidate', 'Votes']];
   state.roles.forEach((role)=>{
     role.candidates.forEach((candidate)=>{
@@ -430,11 +439,12 @@ addRoleBtn.addEventListener('click', ()=>{
 });
 
 startElectionBtn.addEventListener('click', ()=>{
-  if(state.roles.length === 0){ alert('Add roles first in Admin panel'); return; }
+  if(state.roles.length === 0){ showToast('Add roles first in Admin panel', 'warning'); return; }
   if(!requireTeacherAccess()){ return; }
   state.currentRoleIndex = 0;
   state.mode = 'voting';
   votingArea.classList.remove('hidden');
+  votingArea.classList.add('voting-area-active');
   adminPanel.classList.add('hidden');
   resultsArea.classList.add('hidden');
   playStart();
@@ -446,6 +456,7 @@ viewResultsBtn.addEventListener('click', ()=>{
   if(!verifyAdminPrompt()){ return; }
   state.mode = 'results';
   votingArea.classList.add('hidden');
+  votingArea.classList.remove('voting-area-active');
   adminPanel.classList.add('hidden');
   resultsArea.classList.remove('hidden');
   renderResults();
@@ -465,6 +476,7 @@ resetElectionBtn.addEventListener('click', ()=>{
     state = { madrasaName: 'MISBAHUL HUDHA MADRASA KAMBALAKKALLU', roles: [], currentRoleIndex: 0, mode: 'idle' };
     renderRolesList();
     votingArea.classList.add('hidden');
+    votingArea.classList.remove('voting-area-active');
     resultsArea.classList.add('hidden');
     adminPanel.classList.add('hidden');
     saveState();
@@ -478,7 +490,7 @@ setAdminPassBtn.addEventListener('click', ()=>{
     if(confirm('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; }
     return;
   }
-  if(first !== second){ alert('Admin passwords do not match'); return; }
+  if(first !== second){ showToast('Admin passwords do not match', 'error'); return; }
   setAdminPassValue(first);
   adminPassInput.value = '';
   adminPassConfirmInput.value = '';
@@ -495,8 +507,8 @@ setTeacherPinBtn.addEventListener('click', ()=>{
     if(confirm('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; }
     return;
   }
-  if(!/^\d+$/.test(first) || !/^\d+$/.test(second)){ alert('Teacher PIN must contain digits only'); return; }
-  if(first !== second){ alert('Teacher PINs do not match'); return; }
+  if(!/^\d+$/.test(first) || !/^\d+$/.test(second)){ showToast('Teacher PIN must contain digits only', 'warning'); return; }
+  if(first !== second){ showToast('Teacher PINs do not match', 'error'); return; }
   setTeacherPinValue(first);
   teacherPinInput.value = '';
   teacherPinConfirmInput.value = '';
@@ -514,7 +526,7 @@ adminToggle.addEventListener('click', ()=>{
     else { alert('Incorrect password'); }
   } else {
     adminPanel.classList.toggle('hidden');
-    alert('No admin password set. Use the Admin Password box to protect Admin and Results.');
+    showToast('No admin password set. Set one to protect Admin and Results.', 'warning');
   }
 });
 
