@@ -128,6 +128,7 @@ async function requireTeacherAccess(){
     if(attempt === null){ showToast('Teacher access cancelled', 'warning'); return false; }
     if(attempt !== pin){ showToast('Incorrect teacher PIN', 'error'); return false; }
     teacherAccessGranted = true;
+    sessionStorage.setItem('teacher_access_granted', '1');
     return true;
   }
   const pass = getAdminPass();
@@ -136,9 +137,11 @@ async function requireTeacherAccess(){
     if(attempt === null){ showToast('Admin access cancelled', 'warning'); return false; }
     if(attempt !== pass){ showToast('Incorrect admin password', 'error'); return false; }
     teacherAccessGranted = true;
+    sessionStorage.setItem('teacher_access_granted', '1');
     return true;
   }
   teacherAccessGranted = true;
+  sessionStorage.setItem('teacher_access_granted', '1');
   return true;
 }
 
@@ -176,7 +179,7 @@ let state = {
   currentRoleIndex: 0,
   mode: 'idle'
 };
-let teacherAccessGranted = false;
+let teacherAccessGranted = sessionStorage.getItem('teacher_access_granted') === '1';
 
 function loadState(){
   try{
@@ -575,7 +578,7 @@ setAdminPassBtn.addEventListener('click', async ()=>{
   const first = adminPassInput.value.trim();
   const second = adminPassConfirmInput.value.trim();
   if(!first && !second){
-    if(await showConfirmDialog('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; teacherAccessGranted = false; }
+    if(await showConfirmDialog('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; teacherAccessGranted = false; sessionStorage.removeItem('teacher_access_granted'); }
     return;
   }
   if(first !== second){ showToast('Admin passwords do not match', 'error'); return; }
@@ -586,14 +589,14 @@ setAdminPassBtn.addEventListener('click', async ()=>{
 });
 
 clearAdminPassBtn.addEventListener('click', async ()=>{
-  if(await showConfirmDialog('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; }
+  if(await showConfirmDialog('Remove admin password?')){ setAdminPassValue(''); adminPassInput.value=''; adminPassConfirmInput.value=''; teacherAccessGranted = false; sessionStorage.removeItem('teacher_access_granted'); }
 });
 
 setTeacherPinBtn.addEventListener('click', async ()=>{
   const first = teacherPinInput.value.trim();
   const second = teacherPinConfirmInput.value.trim();
   if(!first && !second){
-    if(await showConfirmDialog('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; teacherAccessGranted = false; }
+    if(await showConfirmDialog('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; teacherAccessGranted = false; sessionStorage.removeItem('teacher_access_granted'); }
     return;
   }
   if(!/^\d+$/.test(first) || !/^\d+$/.test(second)){ showToast('Teacher PIN must contain digits only', 'warning'); return; }
@@ -605,7 +608,7 @@ setTeacherPinBtn.addEventListener('click', async ()=>{
 });
 
 clearTeacherPinBtn.addEventListener('click', async ()=>{
-  if(await showConfirmDialog('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; }
+  if(await showConfirmDialog('Remove teacher PIN?')){ setTeacherPinValue(''); teacherPinInput.value=''; teacherPinConfirmInput.value=''; teacherAccessGranted = false; sessionStorage.removeItem('teacher_access_granted'); }
 });
 
 adminToggle.addEventListener('click', async ()=>{
